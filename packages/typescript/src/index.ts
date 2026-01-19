@@ -19,7 +19,7 @@
  * The baml_client subdirectory contains the generated BAML client code.
  */
 
-export const VERSION = '1.1.2';
+export const VERSION = '1.1.3';
 
 // Re-export all types from generated baml_client
 // This export will be available after BAML generation
