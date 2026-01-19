@@ -78,9 +78,10 @@ jobs:
   publish-npm:
     needs: build
     runs-on: ubuntu-latest
+    environment: release
     permissions:
       contents: read
-      id-token: write  # For npm provenance
+      id-token: write  # Required for npm Trusted Publishers (OIDC)
 
     steps:
       - name: Download TypeScript dist
@@ -92,14 +93,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Publish to npm
+      - name: Publish to npm (Trusted Publisher)
         working-directory: package
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public --provenance
+        # No NODE_AUTH_TOKEN - uses OIDC Trusted Publisher
+        # Provenance is automatic with OIDC
+        run: npm publish
 
   github-release:
     needs: [publish-pypi, publish-npm]
