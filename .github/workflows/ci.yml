@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install BAML CLI
+        run: npm install -g @boundaryml/baml
+
+      - name: Validate BAML schemas
+        run: baml-cli check baml_src/
+
+      - name: Generate code
+        run: baml-cli generate baml_src/
+
+      - name: Install Python dependencies
+        working-directory: packages/python
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+          pip install -e ".[dev]"
+
+      - name: Build Python package
+        working-directory: packages/python
+        run: python -m build
+
+      - name: Install TypeScript dependencies
+        working-directory: packages/typescript
+        run: npm install
+
+      - name: Build TypeScript package
+        working-directory: packages/typescript
+        run: npm run build
+
+      # Note: Uncomment when generated code policy changes to commit
+      # - name: Verify generation is consistent
+      #   run: |
+      #     baml-cli generate baml_src/
+      #     if [ -n "$(git status --porcelain packages/)" ]; then
+      #       echo "Generated code differs from committed code"
+      #       git diff packages/
+      #       exit 1
+      #     fi
