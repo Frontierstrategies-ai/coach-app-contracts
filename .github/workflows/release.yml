@@ -6,11 +6,8 @@ on:
       - 'v*'
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      id-token: write
 
     steps:
       - name: Checkout
@@ -31,15 +28,15 @@ jobs:
         run: npm install -g @boundaryml/baml
 
       - name: Validate BAML schemas
-        run: baml-cli check baml_src/
+        run: baml-cli check
 
       - name: Generate code
-        run: baml-cli generate baml_src/
+        run: baml-cli generate
 
       - name: Build Python package
         working-directory: packages/python
         run: |
-          python -m pip install --upgrade pip build twine
+          python -m pip install --upgrade pip build
           python -m build
 
       - name: Build TypeScript package
@@ -48,22 +45,80 @@ jobs:
           npm install
           npm run build
 
-      - name: Publish Python package
-        working-directory: packages/python
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: twine upload dist/*
+      - name: Upload Python dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: packages/python/dist/
 
-      - name: Publish TypeScript package
-        working-directory: packages/typescript
+      - name: Upload TypeScript dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-dist
+          path: packages/typescript/
+
+  publish-pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write  # Required for PyPI Trusted Publishers (OIDC)
+
+    steps:
+      - name: Download Python dist
+        uses: actions/download-artifact@v4
+        with:
+          name: python-dist
+          path: dist/
+
+      - name: Publish to PyPI (Trusted Publisher)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # No token needed - uses OIDC Trusted Publisher
+
+  publish-npm:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # For npm provenance
+
+    steps:
+      - name: Download TypeScript dist
+        uses: actions/download-artifact@v4
+        with:
+          name: typescript-dist
+          path: package/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Publish to npm
+        working-directory: package
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public
+        run: npm publish --access public --provenance
+
+  github-release:
+    needs: [publish-pypi, publish-npm]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Python dist
+        uses: actions/download-artifact@v4
+        with:
+          name: python-dist
+          path: dist/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           generate_release_notes: true
-          files: |
-            packages/python/dist/*
+          files: dist/*
