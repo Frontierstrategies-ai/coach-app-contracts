@@ -95,6 +95,19 @@ enum VoiceTrainingStatus {
   RETRAINING @alias("retraining")         // Retraining with new data
 }
 
+// Voice Learning v1 Reference
+// LLM-based semantic style analysis types are defined in:
+// baml_src/types/voice-learning-v1.baml
+//
+// v1 extends v0 with:
+// - ToneVector: 5-dimensional tone profile
+// - StyleAnalysis: LLM-computed style characteristics
+// - StyleInsight: Human-readable insights for dashboard
+// - VoiceProfileV1: Extended profile with style analysis
+// - VoiceMatchResult: Detailed scoring results
+// - StyleTuning: Manual coach adjustments
+// - AnalyzeStyleFromCorrections: BAML function for batch analysis
+
 // -----------------------------------------------------------------------------
 // Command Center Types
 // -----------------------------------------------------------------------------
