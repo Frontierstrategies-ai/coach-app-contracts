@@ -5,6 +5,18 @@
 
 Boundary contracts and generated SDKs for the Coach App ecosystem.
 
+## Terminology
+
+| Term | Definition |
+|------|------------|
+| **Coachee** | The person being coached |
+| **Coach** | An individual who does coaching |
+| **Client** | A business entity (corporation or single proprietorship) purchasing a license to use the product |
+
+> ⚠️ **Note**: In BAML type definitions, "client" historically referred to "coachee". Migration to correct terminology is planned. Types like `ClientProfile`, `ClientGoal`, `clientId` actually refer to the coachee (person being coached), not a business entity.
+
+---
+
 ## What is this?
 
 A dedicated contracts repository that serves as the **single source of truth** for:
