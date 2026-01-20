@@ -1,134 +1,222 @@
 // =============================================================================
-// Session Notes Types - Post-Session Documentation
+// 6-Section Session Notes Types (Typed Structure)
 // =============================================================================
-// These types define the session notes structure generated after coaching
-// sessions. The document is organized into 6 sections following the coaching
-// methodology: Recap, Observations, Inquiries, Invitations, Resources, Next.
+// Post-session documentation with typed sections following ROIIRN methodology.
+// Breaking change in v2.0.0: Replaced generic SessionSectionContent[] with
+// explicitly typed section fields as required by backend spec.
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-// Session Note Section Enum
+// Section Identifiers
 // -----------------------------------------------------------------------------
 
-/// The 6 sections of session notes following ROIIRN methodology
-enum SessionNoteSection {
-  RECAP @alias("recap")              // What happened in the session
-  OBSERVATIONS @alias("observations") // Coach's observations about the client
-  INQUIRIES @alias("inquiries")       // Powerful questions explored
-  INVITATIONS @alias("invitations")   // Invitations/challenges given to client
-  RESOURCES @alias("resources")       // Resources shared or referenced
-  NEXT @alias("next")                 // Next steps and action items
+/// The 6 sections of session notes
+enum SessionNoteSectionId {
+  RECAP @alias("recap")
+  OBSERVATIONS @alias("observations")
+  INQUIRIES @alias("inquiries")
+  INVITATIONS @alias("invitations")
+  RESOURCES @alias("resources")
+  NEXT @alias("next")
 }
 
 // -----------------------------------------------------------------------------
-// Session Note Content Types
+// SessionNotes - Main Document Structure
 // -----------------------------------------------------------------------------
 
-/// Content for a single session note section
-class SessionSectionContent {
-  section SessionNoteSection
-  title string
-  content string  // Rich text / markdown content
-  bulletPoints string[]  // Key points as list
-  aiGenerated bool  // Whether AI generated or coach wrote
-  coachEdited bool  // Whether coach modified AI content
-  lastEditedAt string?  // ISO 8601
-}
-
-/// Full session notes document
-class SessionNotesDocument {
-  id string
-  sessionId int
-  clientId int
-  clientName string
-  sessionDate string  // ISO 8601 - when session occurred
-  sessionDuration int  // minutes
-  sections SessionSectionContent[]
-  summary string  // Brief overall session summary
-  keyInsights string[]  // Top insights from the session
-  followUpDate string?  // ISO 8601 - suggested follow-up date
+/// Full session notes document with typed sections
+class SessionNotes {
+  sessionId string
+  recap SessionNoteSection
+  observations SessionNoteSection
+  inquiries InquiriesSection
+  invitations InvitationsSection
+  resources ResourcesSection
+  next NextSection
+  voiceConfidence float  // 0-1, AI voice matching confidence
   generatedAt string  // ISO 8601
-  lastUpdatedAt string  // ISO 8601
+  lastEditedAt string?  // ISO 8601
   status SessionNotesStatus
-  version int  // Document version for tracking edits
 }
 
-/// Status of session notes document
+/// Status of session notes
 enum SessionNotesStatus {
-  DRAFT @alias("draft")           // AI generated, not reviewed
-  IN_REVIEW @alias("in_review")   // Coach is reviewing/editing
-  FINALIZED @alias("finalized")   // Coach has approved
-  SHARED @alias("shared")         // Shared with coachee (if applicable)
+  DRAFT @alias("draft")
+  SENT @alias("sent")
+  ARCHIVED @alias("archived")
 }
 
 // -----------------------------------------------------------------------------
-// Session Notes Request/Response Types
+// Base Section Types
+// -----------------------------------------------------------------------------
+
+/// Base structure for simple sections (recap, observations)
+class SessionNoteSection {
+  id string
+  summary string
+  keyPoints KeyPoint[]
+  expanded bool?
+}
+
+/// A key point within a section
+class KeyPoint {
+  id string
+  text string
+  detail string?
+  quote Quote?
+}
+
+/// A quote from the session
+class Quote {
+  text string
+  timestamp string?  // Position in session recording
+  videoLink string?
+}
+
+// -----------------------------------------------------------------------------
+// Specialized Section Types
+// -----------------------------------------------------------------------------
+
+/// Inquiries section with questions
+class InquiriesSection {
+  id string
+  summary string
+  keyPoints KeyPoint[]
+  expanded bool?
+  questions InquiryQuestion[]
+}
+
+/// A powerful question explored in the session
+class InquiryQuestion {
+  id string
+  question string
+  category InquiryCategory
+  answered bool?
+}
+
+/// Category of inquiry question
+enum InquiryCategory {
+  GROWTH @alias("growth")
+  REFLECTION @alias("reflection")
+  CHALLENGE @alias("challenge")
+  EXPLORATION @alias("exploration")
+}
+
+/// Invitations section with action items
+class InvitationsSection {
+  id string
+  summary string
+  keyPoints KeyPoint[]
+  expanded bool?
+  actionItems ActionItem[]
+}
+
+/// An action item or invitation given to client
+class ActionItem {
+  id string
+  action string
+  specificity ActionSpecificity
+  details string
+  dueDate string?  // ISO 8601
+  completed bool?
+}
+
+/// Level of specificity for action items
+enum ActionSpecificity {
+  WHEN @alias("when")
+  WHAT @alias("what")
+  HOW @alias("how")
+  WHO @alias("who")
+}
+
+/// Resources section with links
+class ResourcesSection {
+  id string
+  summary string
+  keyPoints KeyPoint[]
+  expanded bool?
+  links ResourceLink[]
+}
+
+/// A resource link shared in the session
+class ResourceLink {
+  id string
+  title string
+  url string
+  type ResourceLinkType
+  description string?
+}
+
+/// Type of resource link
+enum ResourceLinkType {
+  DOCUMENT @alias("document")
+  LINK @alias("link")
+  FRAMEWORK @alias("framework")
+}
+
+/// Next section with focus areas
+class NextSection {
+  id string
+  summary string
+  keyPoints KeyPoint[]
+  expanded bool?
+  focusAreas string[]
+  nextSessionDate string?  // ISO 8601
+}
+
+// -----------------------------------------------------------------------------
+// Request/Response Types
 // -----------------------------------------------------------------------------
 
 /// Request to generate session notes
-class SessionNotesRequest {
-  sessionId int
-  clientId int
-  transcript string?  // Optional transcript if available
-  coachRunningNotes string?  // Coach's in-session notes
-  includeSections SessionNoteSection[]  // Empty = all sections
-  regenerate bool  // Force regeneration even if exists
-}
-
-/// Response containing generated session notes
-class SessionNotesResponse {
-  success bool
-  document SessionNotesDocument?
-  error string?
-  warnings string[]  // e.g., "Transcript quality was low"
-  generationTimeMs int
+class GenerateNotesRequest {
+  sessionId string
+  regenerate bool
 }
 
 /// Request to update a specific section
-class SessionSectionUpdateRequest {
-  notesId string
-  section SessionNoteSection
-  content string?
-  bulletPoints string[]
-  markAsEdited bool  // Should mark this section as coach-edited
+class UpdateSectionRequest {
+  sectionId SessionNoteSectionId
+  summary string?
+  keyPoints KeyPoint[]?
 }
 
-/// Response from section update
-class SessionSectionUpdateResponse {
+/// Response containing generated notes
+class SessionNotesResponse {
   success bool
-  updatedSection SessionSectionContent?
+  notes SessionNotes?
   error string?
+  warnings string[]
+  generationTimeMs int
 }
 
-/// Request to finalize/approve session notes
-class SessionNotesFinalizeRequest {
+/// Request to finalize/send session notes
+class FinalizeNotesRequest {
   notesId string
-  shareWithCoachee bool  // Whether to share with the client
-  personalizedMessage string?  // Optional message when sharing
+  sendToClient bool
+  personalizedMessage string?
 }
 
 /// Response from finalizing notes
-class SessionNotesFinalizeResponse {
+class FinalizeNotesResponse {
   success bool
   status SessionNotesStatus
-  sharedAt string?  // ISO 8601, if shared
+  sentAt string?  // ISO 8601, if sent
   error string?
 }
 
 // -----------------------------------------------------------------------------
-// Session Notes Summary Types
+// Summary Types
 // -----------------------------------------------------------------------------
 
 /// Lightweight summary for list views
 class SessionNotesSummary {
   id string
-  sessionId int
+  sessionId string
   clientId int
   clientName string
   sessionDate string  // ISO 8601
   status SessionNotesStatus
-  completedSections int
-  totalSections int
   summary string
   generatedAt string  // ISO 8601
 }

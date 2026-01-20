@@ -17,7 +17,7 @@ Usage:
 The baml_client subpackage contains the generated BAML client code.
 """
 
-__version__ = "1.1.1"
+__version__ = "2.1.0"
 
 # Re-export types from generated baml_client when available
 # This file serves as the entry point; actual types are in baml_client/

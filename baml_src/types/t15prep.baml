@@ -1,114 +1,245 @@
 // =============================================================================
-// T-15 Prep Types - Pre-Session Preparation Document
+// T-15 Prep Document Types (Typed Structure)
 // =============================================================================
-// These types define the T-15 (15 minutes before session) prep document
-// structure that helps coaches prepare for upcoming coaching sessions.
-// The document is organized into 9 sections for comprehensive preparation.
+// Pre-session preparation document with 9 typed sections.
+// Breaking change in v2.0.0: Replaced generic T15SectionContent[] with
+// explicitly typed section fields as required by backend spec.
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-// T-15 Prep Section Enum
+// PrepDocument - Main Document Structure
 // -----------------------------------------------------------------------------
 
-/// The 9 sections of a T-15 prep document (matches backend spec)
-enum T15PrepSection {
-  NORTH_STAR_REMINDER @alias("north_star_reminder")         // Client's articulated purpose
-  LAST_SESSION_RECAP @alias("last_session_recap")           // Recap of previous session
-  COMMITMENTS_TO_CHECK @alias("commitments_to_check")       // Commitments from last session
-  LIFE_CONTEXT @alias("life_context")                       // Recent life events, updates
-  PATTERN_INTELLIGENCE @alias("pattern_intelligence")       // Detected patterns and themes
-  SUGGESTED_OPENERS @alias("suggested_openers")             // AI-generated conversation starters
-  PRIVATE_COACH_NOTES @alias("private_coach_notes")         // Coach's private notes (manual)
-  BETWEEN_SESSION_INTELLIGENCE @alias("between_session_intelligence")  // Summary of coachee-AI convos
-  COACHEE_PRE_SESSION_INPUT @alias("coachee_pre_session_input")       // Coachee's pre-session input
-}
-
-// -----------------------------------------------------------------------------
-// T-15 Prep Content Types
-// -----------------------------------------------------------------------------
-
-/// Content for a single T-15 section
-class T15SectionContent {
-  section T15PrepSection
-  title string
-  content string  // Rich text / markdown content
-  bulletPoints string[]  // Key points as list
-  priority int  // 1-5, higher = more important
-  aiConfidence float  // 0-1, AI's confidence in this section
-}
-
-/// Full T-15 prep document
-class T15PrepDocument {
+/// Full T-15 prep document with typed sections
+class PrepDocument {
   id string
-  sessionId int
+  sessionId string
   clientId int
   clientName string
-  scheduledAt string  // ISO 8601 - session start time
-  sections T15SectionContent[]
-  overallReadiness string  // AI assessment of session readiness
+  sessionTitle string
+  sessionDateTime string  // ISO 8601
+
+  // 9 Typed Sections
+  northStarReminder NorthStarReminder
+  lastSessionRecap LastSessionRecap
+  commitments Commitment[]
+  lifeContext LifeContextItem[]
+  patternIntelligence PatternIntelligence[]
+  suggestedOpeners SuggestedOpener[]
+  privateCoachNotes string
+  betweenSessionIntelligence BetweenSessionEvent[]
+  coacheePreSessionInput CoacheePreSessionInput
+
   generatedAt string  // ISO 8601
-  lastUpdatedAt string  // ISO 8601
-  version int  // Document version for regeneration tracking
+  status PrepStatus
+}
+
+/// Status of prep document
+enum PrepStatus {
+  DRAFT @alias("draft")
+  READY @alias("ready")
+  VIEWED @alias("viewed")
 }
 
 // -----------------------------------------------------------------------------
-// T-15 Prep Request/Response Types
+// Section Types
 // -----------------------------------------------------------------------------
 
-/// Request to generate a T-15 prep document
-class T15PrepRequest {
-  sessionId int
-  clientId int
-  includeSections T15PrepSection[]  // Empty = all sections
-  regenerate bool  // Force regeneration even if exists
-  focusAreas string[]  // Optional coach-specified focus areas
+/// Client's articulated purpose and direction
+class NorthStarReminder {
+  values string[]
+  vision string
+  overarchingGoals string[]
 }
 
-/// Response containing generated T-15 prep
-class T15PrepResponse {
+/// Recap of previous session
+class LastSessionRecap {
+  themes string[]
+  breakthroughs string[]
+  emotionalMoments string[]
+  summary string
+  sessionDate string  // ISO 8601
+}
+
+/// A commitment from a previous session
+class Commitment {
+  id string
+  description string
+  status CommitmentStatus
+  source CommitmentSource
+  sessionId string?
+  createdAt string  // ISO 8601
+}
+
+/// Status of a commitment
+enum CommitmentStatus {
+  COMPLETED @alias("completed")
+  PENDING @alias("pending")
+  PARTIAL @alias("partial")
+  UNKNOWN @alias("unknown")
+}
+
+/// Source of a commitment
+enum CommitmentSource {
+  SESSION @alias("session")
+  BETWEEN_SESSION @alias("between_session")
+}
+
+/// Recent life context item
+class LifeContextItem {
+  area LifeContextArea
+  summary string
+  source string
+  updatedAt string  // ISO 8601
+}
+
+/// Area of life context
+enum LifeContextArea {
+  WORK @alias("work")
+  RELATIONSHIPS @alias("relationships")
+  HEALTH @alias("health")
+  PERSONAL @alias("personal")
+  OTHER @alias("other")
+}
+
+/// Detected pattern or theme
+class PatternIntelligence {
+  id string
+  pattern string
+  frequency int
+  trend PatternTrend
+  evidence PatternEvidence[]
+  lastOccurrence string  // ISO 8601
+}
+
+/// Trend direction for patterns
+enum PatternTrend {
+  INCREASING @alias("increasing")
+  STABLE @alias("stable")
+  DECREASING @alias("decreasing")
+}
+
+/// Evidence supporting a pattern
+class PatternEvidence {
+  sessionId string
+  sessionDate string  // ISO 8601
+  quote string
+  timestamp string?  // Optional timestamp within session
+}
+
+/// AI-generated conversation starter
+class SuggestedOpener {
+  question string
+  rationale string
+  category OpenerCategory
+}
+
+/// Category of opener question
+enum OpenerCategory {
+  COMMITMENT @alias("commitment")
+  PATTERN @alias("pattern")
+  CONTEXT @alias("context")
+  EXPLORATION @alias("exploration")
+}
+
+/// Event from between sessions
+class BetweenSessionEvent {
+  id string
+  type BetweenSessionEventType
+  summary string
+  sentiment Sentiment?
+  timestamp string  // ISO 8601
+}
+
+/// Type of between-session event
+enum BetweenSessionEventType {
+  CHECK_IN @alias("check_in")
+  JOURNAL @alias("journal")
+  COMPLETION @alias("completion")
+  CONVERSATION @alias("conversation")
+}
+
+/// Sentiment indicator
+enum Sentiment {
+  POSITIVE @alias("positive")
+  NEUTRAL @alias("neutral")
+  NEGATIVE @alias("negative")
+}
+
+/// Coachee's pre-session input
+class CoacheePreSessionInput {
+  submitted bool
+  submittedAt string?  // ISO 8601
+  topics string[]?
+  updates string?
+  questions string[]?
+  moodRating int?  // 1-10 scale
+}
+
+// -----------------------------------------------------------------------------
+// PrepTemplate and Section Configuration
+// -----------------------------------------------------------------------------
+
+/// Identifiers for prep sections
+enum PrepSectionId {
+  NORTH_STAR @alias("north_star")
+  LAST_SESSION @alias("last_session")
+  COMMITMENTS @alias("commitments")
+  LIFE_CONTEXT @alias("life_context")
+  PATTERNS @alias("patterns")
+  OPENERS @alias("openers")
+  PRIVATE_NOTES @alias("private_notes")
+  BETWEEN_SESSION @alias("between_session")
+  COACHEE_INPUT @alias("coachee_input")
+}
+
+/// Template for coach's prep preferences
+class PrepTemplate {
+  id string
+  coachId int
+  name string
+  sectionsEnabled PrepSectionId[]
+  defaultExpanded PrepSectionId[]
+}
+
+// -----------------------------------------------------------------------------
+// Request/Response Types
+// -----------------------------------------------------------------------------
+
+/// Request to generate a prep document
+class GeneratePrepRequest {
+  sessionId string
+  regenerate bool
+}
+
+/// Request to update private notes
+class UpdatePrepNotesRequest {
+  privateCoachNotes string
+}
+
+/// Response containing generated prep
+class PrepResponse {
   success bool
-  document T15PrepDocument?
+  document PrepDocument?
   error string?
-  warnings string[]  // e.g., "Limited data for observations section"
+  warnings string[]
   generationTimeMs int
 }
 
-/// Request to update a specific section
-class T15SectionUpdateRequest {
-  prepId string
-  section T15PrepSection
-  content string?
-  bulletPoints string[]
-  coachNotes string?  // Coach's additions/modifications
-}
-
-/// Response from section update
-class T15SectionUpdateResponse {
-  success bool
-  updatedSection T15SectionContent?
-  error string?
-}
-
-// -----------------------------------------------------------------------------
-// T-15 Prep Summary Types
-// -----------------------------------------------------------------------------
-
 /// Lightweight summary for list views
-class T15PrepSummary {
+class PrepSummary {
   id string
-  sessionId int
+  sessionId string
   clientId int
   clientName string
-  scheduledAt string  // ISO 8601
+  sessionDateTime string  // ISO 8601
+  status PrepStatus
   generatedAt string  // ISO 8601
-  completedSections int
-  totalSections int
-  overallReadiness string
 }
 
-/// List of T-15 preps with pagination
-class T15PrepList {
-  items T15PrepSummary[]
+/// List of preps with pagination
+class PrepList {
+  items PrepSummary[]
   total int
   page int
   pageSize int

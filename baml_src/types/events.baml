@@ -82,6 +82,11 @@ enum EventType {
   T15_PREP_UPDATED @alias("t15_prep_updated")
   T15_PREP_VIEWED @alias("t15_prep_viewed")
 
+  // Prep notification events (v2.0.0)
+  PREP_NOTIFICATION @alias("prep_notification")
+  PREP_READY @alias("prep_ready")
+  PREP_VIEWED @alias("prep_viewed")
+
   // Session Notes events (v1.1.0)
   SESSION_NOTES_GENERATED @alias("session_notes_generated")
   SESSION_NOTES_UPDATED @alias("session_notes_updated")
@@ -266,7 +271,7 @@ class VoiceSamplesPayload {
 /// Payload for T15_PREP_* events
 class T15PrepEventPayload {
   prepId string
-  sessionId int
+  sessionId string  // UUID format
   clientId int
   clientName string?
   scheduledAt string  // ISO 8601 - session time
@@ -279,7 +284,7 @@ class T15PrepEventPayload {
 /// Payload for SESSION_NOTES_* events
 class SessionNotesEventPayload {
   notesId string
-  sessionId int
+  sessionId string  // UUID format
   clientId int
   clientName string?
   sessionDate string  // ISO 8601
@@ -288,4 +293,17 @@ class SessionNotesEventPayload {
   previousStatus string?
   sectionsCompleted int
   totalSections int
+}
+
+// -----------------------------------------------------------------------------
+// v2.0.0 Typed Payload Classes
+// -----------------------------------------------------------------------------
+
+/// Payload for PREP_NOTIFICATION, PREP_READY, PREP_VIEWED events
+class PrepNotificationPayload {
+  sessionId string
+  clientName string
+  sessionDateTime string  // ISO 8601
+  prepStatus string  // PrepStatusValue
+  minutesUntilSession int
 }

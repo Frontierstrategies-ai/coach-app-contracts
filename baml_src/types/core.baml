@@ -60,7 +60,7 @@ class PageContext {
   url string
   route string?
   clientId int?
-  sessionId int?
+  sessionId string?  // UUID format (was int, changed for UUID compatibility)
   pageTitle string?
   pageData map<string, string>  // Additional extracted data
 }
@@ -69,7 +69,7 @@ class PageContext {
 class ResolvedContext {
   clientId int?
   clientName string?
-  sessionId int?
+  sessionId string?  // UUID format (was int, changed for UUID compatibility)
   sessionDate string?
   confidence float  // 0-1, confidence in resolution
 }
@@ -89,7 +89,7 @@ class ChatMessage {
 class ChatRequest {
   message string
   context PageContext?
-  conversationHistory ChatMessage[]
+  conversationHistory ChatMessage[]?  // Optional - backend can retrieve from DB if not provided
   conversationId string?
 }
 
@@ -108,6 +108,7 @@ class ChatResponse {
   conversationId string
   suggestedActions SuggestedAction[]
   context ResolvedContext?
+  frontendCommands FrontendCommand[]?  // Commands for frontend to execute (Phase 2.5+)
 }
 
 // -----------------------------------------------------------------------------
@@ -177,6 +178,7 @@ class ActionRequest {
 
 class ActionResponse {
   success bool
+  actionId string?  // UUID of the action log entry (for tracking)
   tool ToolName
   output ActionOutput?
   error ActionError?
@@ -202,7 +204,7 @@ class ClientContext {
 }
 
 class SessionContext {
-  id int
+  id string  // UUID format (was int, changed for UUID compatibility)
   clientId int
   clientName string
   scheduledAt string

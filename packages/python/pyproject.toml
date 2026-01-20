@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "coach-app-baml-client"
-version = "1.1.4"
+version = "2.1.0"
 description = "BAML-generated types and client for coach-app boundary contracts"
 readme = "README.md"
 license = "MIT"
