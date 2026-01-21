@@ -276,6 +276,53 @@ This repo implements a **boundary contracts pattern**:
 3. Both packages are released together
 4. Consumers only update dependency versions
 
+## Backend Integration
+
+The Django backend uses a **bidirectional mapping layer** to convert between these Pydantic contracts and Django ORM models.
+
+**Full documentation**: [`coach-app-backend/specs/mapping-layer.md`](../coach-app-backend/specs/mapping-layer.md)
+
+### Key Patterns
+
+**Request types → Django models**:
+```python
+from api.regenesis.utils.model_mappers import ScheduledMessageMapper
+from coach_app_baml_client import CreateScheduledMessageRequest
+
+mapper = ScheduledMessageMapper()
+django_instance = mapper.create_from_pydantic(
+    CreateScheduledMessageRequest.model_validate(request.data),
+    extra_fields={"coach": request.user}
+)
+```
+
+**Django models → Response contracts**:
+```python
+contract = mapper.to_pydantic(django_instance)
+return contract.model_dump(by_alias=True)  # Returns camelCase JSON
+```
+
+### Enum Conventions
+
+| Layer | Format | Example |
+|-------|--------|---------|
+| Contracts (Pydantic) | UPPERCASE | `MessageChannel.EMAIL` |
+| Django (DB storage) | lowercase | `"email"` |
+| API JSON | UPPERCASE string | `"EMAIL"` |
+
+The mapping layer handles conversions automatically via `enum_conversion.py`.
+
+### Available Mappers
+
+| Mapper | Contract Types |
+|--------|---------------|
+| `ScheduledMessageMapper` | `CreateScheduledMessageRequest`, `UpdateScheduledMessageRequest`, `ScheduledMessage` |
+| `VoiceSampleMapper` | `VoiceSampleInput`, `VoiceSample` |
+| `ClientResourceMapper` | `CreateResourceRequest`, `UpdateResourceRequest`, `ResourceItem` |
+| `OnboardingProgressMapper` | `OnboardingProgress`, `OnboardingPhaseProgress` |
+| `VoiceProfileMapper` | `VoiceProfile`, `VoiceProfileV1` |
+| `StateMapper` | `StateUpdateRequest`, `UserActiveState` |
+
 ## CI/CD
 
 Releases are triggered by version tags (`v*`):
