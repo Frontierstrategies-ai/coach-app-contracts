@@ -143,7 +143,7 @@ class StyleTrendPoint {
 
 /// Analyze correction pairs to compute style profile
 function AnalyzeStyleFromCorrections(request: StyleAnalysisRequest) -> StyleAnalysisResponse {
-  client Claude
+  client GroqNormal
   prompt #"
     Analyze these writing corrections to understand the coach's unique communication style.
 
@@ -170,20 +170,28 @@ function AnalyzeStyleFromCorrections(request: StyleAnalysisRequest) -> StyleAnal
     {{ request.existingProfile }}
     {% endif %}
 
-    Return a comprehensive StyleAnalysisResponse with:
-    - Updated tone profile with 5 dimensions (-1 to 1 or 0 to 1)
-    - Common sentence patterns observed
-    - Transition phrases the coach prefers
-    - Overall emotional register description
-    - Rhetorical patterns used
-    - Confidence level based on sample size
-    {% if request.includeInsights %}- Human-readable insights with evidence{% endif %}
+    Respond with ONLY a valid JSON object (no markdown, no explanation) matching this exact schema:
+    {
+      "styleProfile": {
+        "toneProfile": {"warmth": <float -1 to 1>, "formality": <float -1 to 1>, "directness": <float -1 to 1>, "empathy": <float 0 to 1>, "energy": <float -1 to 1>},
+        "sentencePatterns": ["<string>"],
+        "transitionPhrases": ["<string>"],
+        "emotionalRegister": "<string describing overall tone>",
+        "rhetoricalPatterns": ["<string>"],
+        "confidence": <float 0 to 1>,
+        "sampleCount": {{ request.correctionPairs | length }},
+        "lastUpdated": "2026-01-21T00:00:00Z"
+      },
+      "insights": [{"category": "<string>", "insight": "<string>", "evidence": ["<string>"], "confidence": <float>}],
+      "voiceMatchConfidence": <float 0 to 1>,
+      "improvementSuggestions": ["<string>"]
+    }
   "#
 }
 
 /// Score content against voice profile
 function ScoreVoiceMatch(content: string, profile: VoiceProfileV1) -> VoiceMatchResult {
-  client Claude
+  client GroqNormal
   prompt #"
     Score how well this content matches the coach's voice profile.
 
@@ -211,7 +219,7 @@ function ScoreVoiceMatch(content: string, profile: VoiceProfileV1) -> VoiceMatch
 
 /// Generate style insights from profile for dashboard
 function GenerateStyleInsights(profile: VoiceProfileV1) -> StyleInsight[] {
-  client Claude
+  client GroqNormal
   prompt #"
     Generate human-readable insights about this coach's writing style.
 
